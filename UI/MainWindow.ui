@@ -7,14 +7,14 @@
     <x>0</x>
     <y>0</y>
     <width>880</width>
-    <height>591</height>
+    <height>547</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>声音交互软件</string>
+   <string>声音信号处理软件</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0,0,15" columnstretch="0,0,0,0,0">
+   <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0,0,0" columnstretch="0,0,0,0,0">
     <property name="sizeConstraint">
      <enum>QLayout::SetMinAndMaxSize</enum>
     </property>
@@ -28,89 +28,17 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="2">
-     <widget class="Line" name="line_5">
+    <item row="3" column="1">
+     <widget class="Line" name="line_3">
       <property name="orientation">
-       <enum>Qt::Vertical</enum>
+       <enum>Qt::Horizontal</enum>
       </property>
      </widget>
-    </item>
-    <item row="4" column="1" colspan="3">
-     <layout class="QVBoxLayout" name="layout_graph">
-      <property name="sizeConstraint">
-       <enum>QLayout::SetMinAndMaxSize</enum>
-      </property>
-     </layout>
-    </item>
-    <item row="1" column="0">
-     <widget class="Line" name="line_7">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="3">
-     <layout class="QHBoxLayout" name="layout_output_device" stretch="1,3">
-      <item>
-       <widget class="QLabel" name="output_label">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>输出设备：</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QComboBox" name="output_device"/>
-      </item>
-     </layout>
     </item>
     <item row="2" column="4">
      <widget class="Line" name="line_11">
       <property name="orientation">
        <enum>Qt::Vertical</enum>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="3">
-     <widget class="Line" name="line">
-      <property name="orientation">
-       <enum>Qt::Horizontal</enum>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="1">
-     <widget class="Line" name="line_2">
-      <property name="orientation">
-       <enum>Qt::Horizontal</enum>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="4">
-     <widget class="Line" name="line_10">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="2">
-     <widget class="Line" name="line_6">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="3">
-     <widget class="Line" name="line_4">
-      <property name="orientation">
-       <enum>Qt::Horizontal</enum>
       </property>
      </widget>
     </item>
@@ -176,6 +104,64 @@
       </item>
      </layout>
     </item>
+    <item row="2" column="3">
+     <layout class="QHBoxLayout" name="layout_output_device" stretch="1,3">
+      <item>
+       <widget class="QLabel" name="output_label">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>输出设备：</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="output_device"/>
+      </item>
+     </layout>
+    </item>
+    <item row="0" column="3">
+     <widget class="Line" name="line">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <widget class="Line" name="line_2">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="3">
+     <widget class="Line" name="line_4">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="4">
+     <widget class="Line" name="line_10">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="2">
+     <widget class="Line" name="line_5">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+     </widget>
+    </item>
     <item row="1" column="3">
      <layout class="QHBoxLayout" name="layout_input_device" stretch="1,3">
       <item>
@@ -197,28 +183,45 @@
       <item>
        <widget class="QComboBox" name="input_device">
         <property name="currentIndex">
-         <number>1</number>
+         <number>-1</number>
         </property>
-        <item>
-         <property name="text">
-          <string>1</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>2</string>
-         </property>
-        </item>
        </widget>
       </item>
      </layout>
     </item>
-    <item row="3" column="1">
-     <widget class="Line" name="line_3">
+    <item row="1" column="0">
+     <widget class="Line" name="line_7">
       <property name="orientation">
-       <enum>Qt::Horizontal</enum>
+       <enum>Qt::Vertical</enum>
       </property>
      </widget>
+    </item>
+    <item row="2" column="2">
+     <widget class="Line" name="line_6">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="1" colspan="3">
+     <layout class="QVBoxLayout" name="layout_graph" stretch="6,6,0">
+      <property name="sizeConstraint">
+       <enum>QLayout::SetMinAndMaxSize</enum>
+      </property>
+      <item>
+       <layout class="QVBoxLayout" name="graph_time"/>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout"/>
+      </item>
+      <item>
+       <widget class="QLabel" name="locate">
+        <property name="text">
+         <string>X=  ,Y=  </string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>
