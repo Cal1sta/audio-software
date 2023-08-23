@@ -255,7 +255,15 @@
      <addaction name="action_AM"/>
      <addaction name="action_FM"/>
     </widget>
-    <addaction name="action_single"/>
+    <widget class="QMenu" name="menu">
+     <property name="title">
+      <string>单频信号</string>
+     </property>
+     <addaction name="action_sinwave"/>
+     <addaction name="action_squarewave"/>
+     <addaction name="action_pulsewave"/>
+    </widget>
+    <addaction name="menu"/>
     <addaction name="menu_modify"/>
     <addaction name="action_sweep"/>
    </widget>
@@ -282,17 +290,6 @@
   <action name="action_save">
    <property name="text">
     <string>保存</string>
-   </property>
-  </action>
-  <action name="action_single">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>单频信号</string>
    </property>
   </action>
   <action name="action_sweep">
@@ -333,6 +330,21 @@
   <action name="action_freq">
    <property name="text">
     <string>频域分析</string>
+   </property>
+  </action>
+  <action name="action_sinwave">
+   <property name="text">
+    <string>正弦波</string>
+   </property>
+  </action>
+  <action name="action_squarewave">
+   <property name="text">
+    <string>矩形波</string>
+   </property>
+  </action>
+  <action name="action_pulsewave">
+   <property name="text">
+    <string>脉冲</string>
    </property>
   </action>
  </widget>

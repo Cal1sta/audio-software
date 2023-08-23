@@ -4,6 +4,7 @@ import math
 import torchaudio
 import numpy as np
 import matplotlib.pyplot as plt
+import struct
 
 def calculate_axis(filename):
     print("读取文件...")
@@ -28,7 +29,7 @@ def data_fft(t,y,Fs):
     #plt.show()
     return freq[1:int(n/2)], np.abs(fft_y[1:int(n/2)])
 
-def decode_wavedata(wavedata,wavewidth,wavechannel):#byte转list
+def decode_wavedata(wavedata,wavewidth,wavechannel):#byte转list,归一化
     Timedata=[]
     n = int(len(wavedata) / wavewidth)
     i = 0
@@ -45,6 +46,11 @@ def decode_wavedata(wavedata,wavewidth,wavechannel):#byte转list
     Timedata.shape = -1, wavechannel
     Timedata = Timedata.T
     return Timedata
+
+def encode_wavedata(data_list):#list转byte
+    byte_data = b''
+    for data in data_list:
+        byte_data += struct.pack('<h',int(data))
 
 if __name__ == '__main__':
     filename = r"D:\audio-software\wav\sample1.wav"

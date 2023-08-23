@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>211</width>
-    <height>270</height>
+    <height>245</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -57,16 +57,6 @@
          <string>矩形波</string>
         </property>
        </item>
-       <item>
-        <property name="text">
-         <string>脉冲波</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>当前采集的信号</string>
-        </property>
-       </item>
       </widget>
      </item>
     </layout>
@@ -93,26 +83,9 @@
     </layout>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="Layout_amp">
+    <layout class="QHBoxLayout" name="Layout_offset_or_ratio">
      <item>
-      <widget class="QLabel" name="label_amp">
-       <property name="text">
-        <string>振幅：</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QSpinBox" name="amp"/>
-     </item>
-    </layout>
-   </item>
-   <item>
-    <layout class="QHBoxLayout" name="Layout_offset">
-     <item>
-      <widget class="QLabel" name="label_offset">
+      <widget class="QLabel" name="label_offset_or_ratio">
        <property name="text">
         <string>相位(°)：</string>
        </property>
@@ -122,12 +95,57 @@
       </widget>
      </item>
      <item>
-      <widget class="QSpinBox" name="offset">
+      <widget class="QSpinBox" name="offset_or_ratio">
        <property name="maximum">
         <number>360</number>
        </property>
        <property name="singleStep">
         <number>1</number>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="Layout_samplerate">
+     <item>
+      <widget class="QLabel" name="label_samplerate">
+       <property name="text">
+        <string>采样率（hz）：</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="samplerate">
+       <property name="maximum">
+        <number>99999</number>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="Layout_duration">
+     <item>
+      <widget class="QLabel" name="label_duration">
+       <property name="text">
+        <string>持续时间（s）：</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QDoubleSpinBox" name="duration">
+       <property name="maximum">
+        <double>999.990000000000009</double>
+       </property>
+       <property name="singleStep">
+        <double>0.010000000000000</double>
        </property>
       </widget>
      </item>
@@ -206,8 +224,8 @@
  <tabstops>
   <tabstop>type</tabstop>
   <tabstop>freq</tabstop>
-  <tabstop>amp</tabstop>
-  <tabstop>offset</tabstop>
+  <tabstop>samplerate</tabstop>
+  <tabstop>offset_or_ratio</tabstop>
   <tabstop>carryfreq</tabstop>
   <tabstop>parameter</tabstop>
  </tabstops>
