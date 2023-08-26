@@ -9,6 +9,7 @@ import pyqtgraph as pg
 from PyQt5.QtCore import Qt,QFile
 from PyQt5.QtGui import QPixmap,QPainter
 from PyQt5.QtWidgets import QApplication,QMainWindow,QDialog,QFileDialog,QGraphicsScene,QMessageBox
+from scipy.fft import fft, fftfreq
 from UI_MainWindow import *
 from UI_modify import *
 from UI_sin_generate import *
@@ -162,8 +163,10 @@ class Main_Window(QMainWindow, Ui_MainWindow):
     _data_list = []#wave的列表格式
     _wave = b"" #byte格式
     _current_time = 0
-    _time_axis = []
-    _amp_axis = []
+    _time_axis = []#时域图x轴 list
+    _amp_axis = []#时域图y轴 list
+    _freq_axis = np.array([0])
+    _amp_freq_axis = np.array([0])
     _filename = ''
     _drawsample = 10000#绘制图像时的坐标数量
     showmaxx = 1
@@ -308,11 +311,7 @@ class Main_Window(QMainWindow, Ui_MainWindow):
         self.sweep.disconnect()
 
     def open_file(self):
-        self.status_play = False
-        self.status_stop = False
-        self.status_end = False
-        self.status_record = False
-        self.status_end = False
+        self.ret2origin()
         if not self._filename:#如果为空
             fname, ftype = QFileDialog.getOpenFileName(self, "打开音频文件", "./", "All Files(*);;Wav(*.wav)")
         else:
@@ -348,6 +347,13 @@ class Main_Window(QMainWindow, Ui_MainWindow):
 
     def new_file(self):
         print("创建新文件")
+        if not self.status_saved and self._wave:#如果还没有保存文件并且wave非空，即生成或录制音频且尚未保存
+            yesorno = QMessageBox.question(self,"Unsaved file...","是否保存当前音频？",QMessageBox.Yes | QMessageBox.No)
+            if yesorno == QMessageBox.Yes:
+                self.save_file()
+            else:
+                pass
+        self.ret2origin()
 
     def save_file(self):
         fname, ftype = QFileDialog.getSaveFileName(self, "保存音频文件", "./", "Wav(*.wav)")
@@ -389,7 +395,7 @@ class Main_Window(QMainWindow, Ui_MainWindow):
             ymin = xyrange[1][0]
             ymax = xyrange[1][1]
             if xmin<=point.x()<=xmax and ymin<=point.y()<ymax:#只有在坐标系范围内才显示
-                self.locate.setText("X=%0.2f Y=%0.2f"%(point.x(),point.y()))
+                self.locate.setText("光标位置：X=%0.2f Y=%0.2f"%(point.x(),point.y()))
 
     def mouse_located2(self, evt):
         #print("鼠标移动")
@@ -401,7 +407,7 @@ class Main_Window(QMainWindow, Ui_MainWindow):
             ymin = xyrange[1][0]
             ymax = xyrange[1][1]
             if xmin<=point.x()<=xmax and ymin<=point.y()<ymax:#只有在坐标系范围内才显示
-                self.locate.setText("X=%0.2f Y=%0.2f"%(point.x(),point.y()))
+                self.locate.setText("光标位置：X=%0.2f Y=%0.2f\t"%(point.x(),point.y()))
 
     def frequency_analyze(self):
         self.plot_fft()
@@ -548,7 +554,6 @@ class Main_Window(QMainWindow, Ui_MainWindow):
     def end(self):
         self.status_end = True
 
-
     def plot_Coordinate_system(self):#只做框架（不画曲线图）
         pg.setConfigOptions(antialias=True, background='#ffffff', foreground="#000000")  # pg全局变量设置函数，antialias=True开启曲线抗锯齿
         win1 = pg.GraphicsLayoutWidget()  # 创建pg layout，可实现数据界面布局自动管理
@@ -613,7 +618,7 @@ class Main_Window(QMainWindow, Ui_MainWindow):
     def plot_fft(self):
         n=len(self._time_axis)# 信号长度
         #方法一
-        freq = np.fft.fftfreq(n, d=1/self._framerate) #x轴
+        """ freq = np.fft.fftfreq(n, d=1/self._framerate) #x轴
         # amp_y = []
         # for x in self._amp_axis:
         #     amp_y.append(x*math.pow(2,self._sampwidth * 8))
@@ -624,17 +629,17 @@ class Main_Window(QMainWindow, Ui_MainWindow):
         print(amplitude_y)
         print(max(amplitude_y))
         self.plot2.setData(freq[1:int(n/2)],  amplitude_y, pen='b', clear=True)
-        self.p2.setLimits(yMin=0,yMax=1.1,xMin=0,xMax=np.max(freq))
+        self.p2.setLimits(yMin=0,yMax=1.1,xMin=0,xMax=np.max(freq)) """
         #方法二
-        # x = np.arange(n)             # 频率个数
-        # half_x = x[range(int(n/2))]  #取一半区间
-        # fft_y = np.fft.fft(self._amp_axis)
-        # abs_y=np.abs(fft_y)                # 取复数的绝对值，即复数的模(双边频谱)
-        # angle_y=np.angle(fft_y)            #取复数的角度
-        # normalization_y=abs_y/n           #归一化处理（双边频谱）                              
-        # normalization_half_y = normalization_y[range(int(n/2))]      #由于对称性，只取一半区间（单边频谱）
-        # self.p2.setLimits(yMin=0,yMax=1.1,xMin=0,xMax=np.max(half_x))
-        # self.plot2.setData(half_x,  normalization_half_y, pen='b', clear=True)
+        x = fftfreq(n, 1/self._framerate)[:n//2]
+        y = fft(self._amp_axis)
+        y = 2.0/n * np.abs(y[0:n//2])#初始格式
+        y = 20 * np.log10(y)#db格式
+        x_new = x[np.where(y>-90)]
+        y_new = y[np.where(y>-90)]#只显示db>-90的频率
+        
+        self.plot2.setData(x_new, y_new, pen='b', clear=True)
+        self.p2.setLimits(yMin=-90,xMin=0,xMax=np.max(x))
 
 if __name__== '__main__':
     app = QApplication(sys.argv)
