@@ -491,11 +491,11 @@ class Main_Window(QMainWindow, Ui_MainWindow):
                 self.showminx = 0
                 self.showmaxx = self._current_time
                 self.plot_waveform()
-            self.status_record = False
-            stream.stop_stream()
-            stream.close()
-            audio.terminate()
-            print("结束录制")
+        self.status_record = False
+        stream.stop_stream()
+        stream.close()
+        audio.terminate()
+        print("结束录制")
 
     def record(self):
         if not self.status_record:#如果当前还没有开始录制

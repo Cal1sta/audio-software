@@ -58,13 +58,3 @@ if __name__ == '__main__':
     f,a = data_fft(x,y,fs)
     plt.plot(f, a)
     plt.show()
-    # n=len(x)
-    # fft_result = np.fft.fft(y)  # 使用NumPy的fft函数进行离散傅立叶变换
-    # magnitude_dB = 20 * np.log10(np.abs(fft_result))
-    # frequency = np.fft.fftfreq(len(x), 1.0/fs)  # 计算频率轴上的点
-    # plt.plot(frequency[1:int(n/2)], magnitude_dB[1:int(n/2)])
-    # plt.xlabel('Frequency (Hz)')
-    # plt.ylabel('Amplitude')
-    # plt.show()
-
-    #data_fft(x,y,fs)
