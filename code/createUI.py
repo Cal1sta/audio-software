@@ -171,6 +171,8 @@ class Main_Window(QMainWindow, Ui_MainWindow):
     _drawsample = 10000#绘制图像时的坐标数量
     showmaxx = 1
     showminx = 0
+    input_device_list = []
+    output_device_list = []
     #以下运行状态
     status_play = False
     status_stop = False
@@ -179,6 +181,7 @@ class Main_Window(QMainWindow, Ui_MainWindow):
     status_saved = False
     status_generated = False
     status_open = False
+    status_progress_pressed = False
     def __init__(self):
         super(Main_Window,self).__init__()
         self.setupUi(self)
@@ -207,6 +210,9 @@ class Main_Window(QMainWindow, Ui_MainWindow):
         self.button_record.clicked.connect(self.record)
         self.button_stop.clicked.connect(self.stop)
         self.button_end.clicked.connect(self.end)
+        self.progress.valueChanged.connect(self.update_progress)
+        self.progress.sliderPressed.connect(self.press_progress)
+        self.progress.sliderReleased.connect(self.release_progress)
         #以下实现信号可视化
         self.plot_Coordinate_system()
         
@@ -241,13 +247,13 @@ class Main_Window(QMainWindow, Ui_MainWindow):
         self.sweep._signal.connect(self.get_sweep_data)
 
     def update_device_info(self):#更新输入与输出的设备列表
-        input_device,output_device = get_device_info()
-        for i in range(len(input_device)):
-            if input_device[i]["maxInputChannels"]>0:
-                self.input_device.insertItem(i,input_device[i]['name'])
-        for i in range(len(output_device)):
-            if output_device[i]["maxOutputChannels"]>0:
-                self.output_device.insertItem(i,output_device[i]['name'])
+        self.input_device_list,self.output_device_list = get_device_info()
+        for i in range(len(self.input_device_list)):
+            self.input_device.insertItem(i,self.input_device_list[i]['name'])
+            self.input_device_list[i]['combobox_index'] = i
+        for i in range(len(self.output_device_list)):
+            self.output_device.insertItem(i,self.output_device_list[i]['name'])
+            self.output_device_list[i]['combobox_index'] = i
 
     def get_modify_data(self, AMorFM, signal_type, signal_freq, signal_samplerate, signal_offset_or_ratio, carry_freq, modify_param, duration):#接收调制信号子窗口回传的数据
         print("接收到调制信号数据：调制类型{0}，基带信号类型：{1}，频率{2}，采样率{3}，相位或占空比{4}，载波频率{5}，调制参数{6}，持续时间{7}".format(AMorFM, signal_type, signal_freq, signal_samplerate, signal_offset_or_ratio, carry_freq, modify_param, duration))
@@ -327,8 +333,6 @@ class Main_Window(QMainWindow, Ui_MainWindow):
             self.p1.setLimits(xMax=self._time_axis[-1])
             self.p1.setXRange(0,self._time_axis[-1])
             self.p1.setYRange(-1.1,1.1)
-            self.L1.setValue(0)
-            self.L1.setBounds([0,self._time_axis[-1]])
             #以下清除已有的频率图
             self.plot2.setData([],[],pen='b', clear=True)
             #以下更新wave的音频参数
@@ -342,6 +346,12 @@ class Main_Window(QMainWindow, Ui_MainWindow):
             print("打开文件{}——声道数：{}，采样率：{}hz，位深：{}".format(self._filename,self._nchannels,self._framerate,self._sampwidth))
             #以下调用绘图方法
             self.plot_waveform()
+            #以下更新播放进度条
+            self.progress.setMaximum(len(self._amp_axis))
+            total_time = int(len(self._amp_axis) / self._framerate)
+            m, s = divmod(total_time, 60)
+            self.progress_label.setText("%02d:%02d/%02d:%02d" % ( 0, 0, m, s))
+            
         else:
             print("open file Error!")
 
@@ -380,6 +390,11 @@ class Main_Window(QMainWindow, Ui_MainWindow):
             self.wf.close()
         except:
             print("close file error")
+        if self._wave and not self.status_play:
+            print("请先保存文件")
+            yesorno = QMessageBox.question(self,"Unsaved file...","是否保存当前音频？",QMessageBox.Yes | QMessageBox.No)
+            if yesorno == QMessageBox.Yes:
+                self.save_file()
         self.status_open = False
         self.setWindowTitle("声音信号处理软件")
         self.ret2origin()
@@ -416,6 +431,7 @@ class Main_Window(QMainWindow, Ui_MainWindow):
         #将图像清空
         self.plot1.setData([],[],pen='b', clear=True)
         self.plot2.setData([],[],pen='b', clear=True)
+        self.progress_label.setText("00:00/00:00")
         #所有参数还原
         self.status_play = False
         self.status_stop = False
@@ -434,13 +450,19 @@ class Main_Window(QMainWindow, Ui_MainWindow):
         self._amp_axis = []
         self._filename = ''
         self._drawsample = 10000#绘制图像时的坐标数量
+        #按钮状态重置
+        self.button_end.setChecked(False)
+        self.button_play.setChecked(False)
+        self.button_record.setChecked(False)
+        self.button_stop.setChecked(False)
 
     def record_music(self):
         #以下为设置参数
         audio = pyaudio.PyAudio()
         device_name = self.input_device.currentText()
-        print("input device name:",device_name)
-        index = get_device_index_by_name(device_name)
+        combobox_index = self.input_device.currentIndex()
+        #print("input device name:",device_name)
+        index = get_device_index_by_combobox(self.input_device_list,combobox_index)
         device_info = audio.get_device_info_by_index(index)
         print(device_info)
         self._nchannels = device_info["maxInputChannels"]#声轨数
@@ -448,11 +470,11 @@ class Main_Window(QMainWindow, Ui_MainWindow):
         t0 = time.time()
         #以下为开始录制     
         stream = audio.open(format=self._FORMAT,
-                    channels=self._nchannels,
-                    frames_per_buffer=self._CHUNK,
-                    rate=self._framerate,
-                    input_device_index=device_info["index"],
-                    input=True)
+                        channels=self._nchannels,
+                        frames_per_buffer=self._CHUNK,
+                        rate=self._framerate,
+                        input_device_index=device_info["index"],
+                        input=True)
         while(not self.status_end):#不按终止按钮，就一直录制
             if not self.status_stop:#只要不暂停
                 data = stream.read(self._CHUNK)
@@ -469,20 +491,28 @@ class Main_Window(QMainWindow, Ui_MainWindow):
                 self.showminx = 0
                 self.showmaxx = self._current_time
                 self.plot_waveform()
-                self.L1.setValue(self._current_time)
-        self.status_record = False
-        stream.stop_stream()
-        stream.close()
-        audio.terminate()
-        print("结束录制")
+            self.status_record = False
+            stream.stop_stream()
+            stream.close()
+            audio.terminate()
+            print("结束录制")
 
     def record(self):
         if not self.status_record:#如果当前还没有开始录制
             self.ret2origin()
-            self.status_record = True
-            self._CHUNK = 2048
-            t=threading.Thread(target=self.record_music,daemon=True)
-            t.start()
+            try:
+                audio = pyaudio.PyAudio()
+                device_name = self.input_device.currentText()
+                combobox_index = self.input_device.currentIndex()
+                index = get_device_index_by_combobox(self.input_device_list,combobox_index)
+                device_info = audio.get_device_info_by_index(index)
+                audio.terminate()
+                self.status_record = True
+                self._CHUNK = 2048
+                t=threading.Thread(target=self.record_music,daemon=True)
+                t.start()
+            except:
+                QMessageBox.warning(self,"error...","输入设备出错",QMessageBox.Ok)
         else:
             self.status_stop = False
 
@@ -490,8 +520,9 @@ class Main_Window(QMainWindow, Ui_MainWindow):
         audio = pyaudio.PyAudio()
         #以下为获取输出设备的信息
         device_name = self.output_device.currentText()
-        print("output device name:",device_name)
-        index = get_device_index_by_name(device_name)
+        combobox_index = self.output_device.currentIndex()
+        #print("output device name:",device_name)
+        index = get_device_index_by_combobox(self.output_device_list,combobox_index)
         device_info = audio.get_device_info_by_index(index)
         print(device_info)
         #self._nchannels = device_info["maxOutputChannels"]#声轨数
@@ -506,16 +537,21 @@ class Main_Window(QMainWindow, Ui_MainWindow):
         #chunk_total = 0
         while data!=b'' and self.status_play:
             if not self.status_stop:#只要不暂停，就播放
-                stream.write(data)#播放
-                #print(data)
-                data = self.wf.readframes(self._CHUNK)
-                print(self.wf.tell())
-                self._current_time += self._CHUNK/self._framerate
-                self.L1.setPos(self._current_time)
+                if not self.status_progress_pressed:#当用户没有拖动进度条时,播放音频会推动进度条
+                    stream.write(data)#播放
+                    #print(data)
+                    data = self.wf.readframes(self._CHUNK)
+                    #print(self.wf.tell())
+                    self._current_time += self._CHUNK/self._framerate
+                    self.progress.setValue(self.wf.tell())
+                    m1,s1 = divmod(int(self._current_time),60)
+                    total_time = int(len(self._amp_axis) / self._framerate)
+                    m2, s2 = divmod(total_time, 60)
+                    self.progress_label.setText("%02d:%02d/%02d:%02d" % ( m1, s1, m2, s2))
             if self.status_end:#如果按了结束键，则直接结束
                 self.wf.rewind()
                 self._current_time = 0
-                self.L1.setPos(self._current_time)
+                self.progress.setValue(0)
                 break
             time.sleep(0.01)
         self.status_play = False
@@ -528,6 +564,7 @@ class Main_Window(QMainWindow, Ui_MainWindow):
             if self.status_open:#如果有打开文件,就播放
                 print("准备播放")
                 self.status_play = True
+                self.status_end = False
                 self.wf.rewind()
                 self._current_time = 0
                 t=threading.Thread(target=self.play_music,daemon=True)
@@ -574,7 +611,7 @@ class Main_Window(QMainWindow, Ui_MainWindow):
         self.p1.setLabel('bottom', text='time', units='s')  # x轴设置函数
         self.p2.setLabel('bottom', text='freq', units='hz')  
         self.p1.setLimits(xMin=0,yMin=-1.1,yMax=1.1)
-        self.p2.setLimits(xMin=0)
+        self.p2.setLimits(xMin=0,yMin=-60,yMax=10)
         self.p1.setYRange(-1.1,1.1)
         #以下为显示光标位置
         self.setMouseTracking(True)
@@ -585,16 +622,26 @@ class Main_Window(QMainWindow, Ui_MainWindow):
         #以下为创建plot
         self.plot1 = self.p1.plot()
         self.plot2 = self.p2.plot()
-        #以下为创建定位线
-        self.L1 = self.p1.addLine(movable=True, pen='g', angle=90, pos=0)
-        self.L1.addMarker(marker='v', position=1)
-        self.L1.sigPositionChangeFinished.connect(self.update_progress)
 
-    def update_progress(self):
+    def press_progress(self):
+        self.status_progress_pressed = True
+        print("press_progress")
+
+    def release_progress(self):
+        self.status_progress_pressed = False
+        print("release_progress")
+
+    def update_progress(self,num):
+        print(num)
         if self.status_play:
-            #if self.status_stop or self.status_end:#如果处于暂停或结束播放的状态
-            self._current_time = self.L1.value()#改时间
-            self.wf.setpos(int(self._current_time*self._framerate))#改文件指针
+            self.progress.setValue(num)
+            self._current_time = num / self._framerate
+            m1,s1 = divmod(int(self._current_time),60)
+            total_time = int(len(self._amp_axis) / self._framerate)
+            m2, s2 = divmod(total_time, 60)
+            self.progress_label.setText("%02d:%02d/%02d:%02d" % ( m1, s1, m2, s2))
+
+            self.wf.setpos(num)#改文件指针
 
     def plot_waveform(self):#画时域图,需备好self.showmaxx,self.showminx,self._framerate,self._drawsample
         interval = (self.showmaxx-self.showminx)* self._framerate//self._drawsample  #画图间隔
@@ -605,8 +652,6 @@ class Main_Window(QMainWindow, Ui_MainWindow):
         #print("Y:",len(self._amp_axis[minx:maxx:interval]))
         self.plot1.setData(self._time_axis[minx:maxx:interval], self._amp_axis[minx:maxx:interval], pen='b', clear=True)
         #print(minx,maxx,interval)
-        
-        #print(self.L1.bounds())
 
     def update_region(self,a,lineshow):#坐标轴缩放后重新绘制图像
         self.showminx = lineshow[0][0]
@@ -616,30 +661,34 @@ class Main_Window(QMainWindow, Ui_MainWindow):
         self.plot_waveform()
 
     def plot_fft(self):
-        n=len(self._time_axis)# 信号长度
-        #方法一
-        """ freq = np.fft.fftfreq(n, d=1/self._framerate) #x轴
-        # amp_y = []
-        # for x in self._amp_axis:
-        #     amp_y.append(x*math.pow(2,self._sampwidth * 8))
-        fft_y = np.fft.fft(self._amp_axis) #y轴
-        abs_y = np.abs(fft_y)
-        amplitude_y = np.abs(abs_y[1:int(n/2)])/n
-        #amplitude_y = amplitude_y/math.pow(2,self._sampwidth * 8 - 1)
-        print(amplitude_y)
-        print(max(amplitude_y))
-        self.plot2.setData(freq[1:int(n/2)],  amplitude_y, pen='b', clear=True)
-        self.p2.setLimits(yMin=0,yMax=1.1,xMin=0,xMax=np.max(freq)) """
-        #方法二
-        x = fftfreq(n, 1/self._framerate)[:n//2]
-        y = fft(self._amp_axis)
-        y = 2.0/n * np.abs(y[0:n//2])#初始格式
-        y = 20 * np.log10(y)#db格式
-        x_new = x[np.where(y>-90)]
-        y_new = y[np.where(y>-90)]#只显示db>-90的频率
-        
-        self.plot2.setData(x_new, y_new, pen='b', clear=True)
-        self.p2.setLimits(yMin=-90,xMin=0,xMax=np.max(x))
+        if len(self._amp_axis):
+            print("fft...")
+            n=len(self._time_axis)# 信号长度
+            x = fftfreq(n, 1/self._framerate)[:n//2]
+            y = fft(self._amp_axis)
+            y = 2.0 /n * np.abs(y[0:n//2]) + 1e-5#初始格式
+            y = 20 * np.log10(y)#db格式
+            x_new = x[np.where(y>=-60)]
+            y_new = y[np.where(y>=-60)]#只显示db>=-60的频率
+            # print("x:",x_new.shape)
+            # print("y:",y_new.shape)
+            # print(x_new,y_new)
+            if x_new.size == 1:#只有一个点时,画不出图,所以要再加一个点
+                print("append")
+                x_temp = x_new[0]
+                y_temp = y_new[0]
+                x_new = np.array([x_temp,x_temp])
+                y_new = np.array([y_temp,-60])
+                print(x_new,y_new)
+                self.p2.setLimits(yMin=-60,yMax=10,xMin=0)
+                self.p2.setYRange(-90,np.max(y_new))
+                self.p2.setXRange(0,1.5*np.max(x_new))
+            else:
+            # print("x_new:",x_new.shape)
+            # print("y_new:",y_new.shape)
+                self.p2.setLimits(yMin=-60,xMin=0,xMax=np.max(x_new))
+                self.p2.setYRange(-90,np.max(y_new))
+            self.plot2.setData(x_new,y_new,pen ='b',clear = True)
 
 if __name__== '__main__':
     app = QApplication(sys.argv)
